@@ -38,8 +38,8 @@ I enjoy learning new skills and continuously developing both my
 
 ## Projects
 
-### Afterlight Island
-A multiplayer racing game featuring robotic dragon horses.
+### CoopCoo
+A adventure game about bird that want to find a place call Nest of Hope.
 
 **Role:** 3D Artist / Game Developer
 
@@ -56,7 +56,7 @@ A multiplayer racing game featuring robotic dragon horses.
 
 You can check out my work here:
 
-- [Portfolio](YOUR_PORTFOLIO_LINK)
+- [Portfolio](https://canva.link/vdcqqh5qe9cw0u6)
 - [ArtStation](YOUR_ARTSTATION_LINK)
 - [GitHub](YOUR_GITHUB_LINK)
 
