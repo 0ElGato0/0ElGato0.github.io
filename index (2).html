@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHOPPER — 3D Artist</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap');
+
+:root{--bg:#08090a;--fg:#e9e9e4;--muted:#8b8b87;--cyan:#55f6ff;--pink:#ff3cac;--violet:#a66cff}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:Inter,Arial,sans-serif;overflow-x:hidden}
+canvas{position:fixed;inset:0;z-index:0}
+body:before{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(circle at 50% 45%,transparent 25%,rgba(0,0,0,.5) 100%)}
+.noise{position:fixed;inset:0;z-index:20;pointer-events:none;opacity:.045;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.scan{position:fixed;inset:0;z-index:19;pointer-events:none;opacity:.055;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.1) 4px)}
+header{position:fixed;z-index:10;top:0;left:0;width:100%;padding:28px 42px;display:flex;justify-content:space-between;pointer-events:none;mix-blend-mode:difference}
+.mono{font-family:"Space Mono",monospace;letter-spacing:.16em;font-size:10px}
+.logo{font-size:14px;font-weight:700}
+.live:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);margin-right:8px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+nav{position:fixed;z-index:10;right:36px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:14px}
+nav a{display:block;width:7px;height:7px;border-radius:50%;background:#777;text-decoration:none;transition:.25s}
+nav a.active{background:var(--cyan);box-shadow:0 0 14px var(--cyan);transform:scale(1.5)}
+main{position:relative;z-index:5}
+section{min-height:100vh;padding:120px 10vw;display:flex;align-items:center}
+.hero{align-items:flex-end;padding-bottom:15vh}
+.wrap{width:100%;max-width:1120px}
+.kicker{font:10px "Space Mono",monospace;letter-spacing:.22em;color:var(--cyan);margin-bottom:22px}
+h1{font-size:clamp(72px,13vw,190px);line-height:.77;letter-spacing:-.08em;font-weight:800}
+.outline{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.62)}
+.lead{max-width:520px;margin-top:36px;color:#aaa;font-size:14px;line-height:1.8}
+.scroll{position:absolute;bottom:40px;font:9px "Space Mono",monospace;letter-spacing:.18em;color:#666}
+.num{font:10px "Space Mono",monospace;letter-spacing:.2em;color:var(--pink);margin-bottom:20px}
+h2{font-size:clamp(54px,8vw,112px);line-height:.82;letter-spacing:-.07em;margin-bottom:48px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:80px}
+.text{font-size:15px;line-height:1.9;color:#aaa;max-width:520px}
+.text strong{color:#fff}
+.meta{border-top:1px solid #ffffff1c}
+.row{display:flex;justify-content:space-between;gap:25px;padding:16px 0;border-bottom:1px solid #ffffff1c;font:10px "Space Mono",monospace;text-transform:uppercase}
+.row span:first-child{color:#60605d}
+.worklist{border-top:1px solid #ffffff1c}
+.work{display:grid;grid-template-columns:60px 1fr auto;align-items:center;gap:24px;padding:26px 0;border-bottom:1px solid #ffffff1c;transition:.35s}
+.work:hover{padding-left:18px;background:#ffffff05}
+.work small{font:9px "Space Mono",monospace;color:#555}
+.work b{font-size:clamp(22px,3vw,42px);font-weight:500;letter-spacing:-.04em}
+.work em{font:9px "Space Mono",monospace;color:#666;font-style:normal}
+.skills{display:flex;flex-wrap:wrap;gap:10px;max-width:900px}
+.skill{font:10px "Space Mono",monospace;padding:14px 17px;border:1px solid #ffffff25;transition:.25s}
+.skill:hover{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 25px #55f6ff18;transform:translateY(-3px)}
+.contact-title{font-size:clamp(58px,9vw,135px);line-height:.82;letter-spacing:-.075em}
+.grad{background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink));-webkit-background-clip:text;color:transparent}
+.links{display:flex;flex-wrap:wrap;gap:35px;margin-top:50px}
+.links a{color:#fff;text-decoration:none;font:10px "Space Mono",monospace;border-bottom:1px solid #555;padding-bottom:5px}
+.links a:hover{color:var(--cyan);border-color:var(--cyan)}
+footer{position:relative;z-index:5;padding:25px 10vw;display:flex;justify-content:space-between;color:#555;font:8px "Space Mono",monospace;letter-spacing:.15em}
+@media(max-width:700px){header{padding:22px}.grid{grid-template-columns:1fr;gap:40px}section{padding:100px 9vw}.work{grid-template-columns:35px 1fr}.work em{display:none}nav{right:18px}}
+</style>
+</head>
+<body>
+<div class="noise"></div><div class="scan"></div>
+<header><div class="logo">CHOPPER / 3D ARTIST</div><div class="live mono">SYSTEM ONLINE</div></header>
+<nav>
+<a href="#home" class="active"></a><a href="#about"></a><a href="#work"></a><a href="#skills"></a><a href="#contact"></a>
+</nav>
+
+<main>
+<section id="home" class="hero">
+<div class="wrap">
+<div class="kicker">PEEMAPON JINJAROEN / CREATIVE PORTFOLIO</div>
+<h1>CHOPPER<br><span class="outline">3D ARTIST</span></h1>
+<p class="lead">3D Artist & Game Developer passionate about stylized characters, environments and game assets — bringing ideas to life through modeling, animation and game design.</p>
+</div>
+<div class="scroll">SCROLL TO ENTER THE SPACE ↓</div>
+</section>
+
+<section id="about">
+<div class="wrap">
+<div class="num">01 / ABOUT</div>
+<h2>WHO<br>AM I?</h2>
+<div class="grid">
+<div class="text">
+<p>I'm <strong>Peemapon Jinjaroen</strong>, also known as <strong>Chopper</strong>.</p><br>
+<p>I am a <strong>3D Artist and Game Developer</strong> passionate about stylized characters, environments and game assets.</p><br>
+<p>I love bringing ideas to life through <strong>3D modeling, animation and game design</strong>, combining artistic work with game development and interactive experiences.</p>
+</div>
+<div class="meta">
+<div class="row"><span>Name</span><span>Peemapon Jinjaroen</span></div>
+<div class="row"><span>Nickname</span><span>Chopper</span></div>
+<div class="row"><span>Role</span><span>3D Artist</span></div>
+<div class="row"><span>Focus</span><span>Stylized 3D / Games</span></div>
+<div class="row"><span>Languages</span><span>Thai / English</span></div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="work">
+<div class="wrap">
+<div class="num">02 / SELECTED WORK</div>
+<h2>THINGS<br>I'VE MADE</h2>
+<div class="worklist">
+<div class="work"><small>01</small><b>Ellen Joe's Weapon</b><em>HARD-SURFACE / ZZZ</em></div>
+<div class="work"><small>02</small><b>Theater</b><em>STYLIZED ENVIRONMENT</em></div>
+<div class="work"><small>03</small><b>Pizza Place</b><em>STYLIZED ENVIRONMENT</em></div>
+<div class="work"><small>04</small><b>Ellie — Original Character</b><em>CHARACTER / RIGGING</em></div>
+<div class="work"><small>05</small><b>Cobble — Original Character</b><em>CHARACTER / LOW POLY</em></div>
+<div class="work"><small>06</small><b>Kage — Original Character</b><em>CHARACTER / LOW POLY</em></div>
+<div class="work"><small>07</small><b>CoopCoo Adventure</b><em>3D / ENV / ANIMATION / GAME LOGIC</em></div>
+</div>
+</div>
+</section>
+
+<section id="skills">
+<div class="wrap">
+<div class="num">03 / SKILLS</div>
+<h2>TOOLS<br>& SKILLS</h2>
+<div class="skills">
+<div class="skill">BLENDER</div><div class="skill">MAYA</div><div class="skill">UNITY</div>
+<div class="skill">3D MODELING</div><div class="skill">CHARACTER MODELING</div><div class="skill">ENVIRONMENT / PROPS</div>
+<div class="skill">TEXTURING</div><div class="skill">UV MAPPING</div><div class="skill">RIGGING</div>
+<div class="skill">3D ANIMATION</div><div class="skill">GAME DESIGN</div><div class="skill">GAME MECHANICS</div>
+<div class="skill">GAME LOGIC</div>
+</div>
+</div>
+</section>
+
+<section id="contact">
+<div class="wrap">
+<div class="num">04 / CONTACT</div>
+<div class="contact-title">LET'S MAKE<br>SOMETHING<br><span class="grad">STRANGE.</span></div>
+<div class="links">
+<a href="mailto:noonamecc@gmail.com">NOONAMECC@GMAIL.COM</a>
+<a href="tel:0625317784">062-531-7784</a>
+</div>
+</div>
+</section>
+</main>
+<footer><span>PEEMAPON JINJAROEN / CHOPPER</span><span>© 2026</span></footer>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from "three";
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x090a0b);
+const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.1,500);
+camera.position.set(0,1.65,8);
+
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff,.55));
+const cyanLight=new THREE.PointLight(0x55f6ff,4,24);
+cyanLight.position.set(0,4,-18);scene.add(cyanLight);
+const pinkLight=new THREE.PointLight(0xff3cac,3,22);
+pinkLight.position.set(0,3,-45);scene.add(pinkLight);
+
+const corridor=new THREE.Group();scene.add(corridor);
+
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(16,200),new THREE.MeshStandardMaterial({color:0x6e706d,roughness:.92}));
+floor.rotation.x=-Math.PI/2;floor.position.set(0,0,-80);corridor.add(floor);
+const ceiling=new THREE.Mesh(new THREE.PlaneGeometry(16,200),new THREE.MeshStandardMaterial({color:0xb6b5ae,roughness:1}));
+ceiling.rotation.x=Math.PI/2;ceiling.position.set(0,7,-80);corridor.add(ceiling);
+
+const wallMat=new THREE.MeshStandardMaterial({color:0xc5c4bd,roughness:.95});
+for(const x of [-8,8]){
+ const wall=new THREE.Mesh(new THREE.PlaneGeometry(200,7),wallMat);
+ wall.rotation.y=x<0?Math.PI/2:-Math.PI/2;wall.position.set(x,3.5,-80);corridor.add(wall);
+}
+const tileMat=new THREE.MeshStandardMaterial({color:0x585a57,roughness:.9});
+for(let z=4;z>-190;z-=4){
+ const t=new THREE.Mesh(new THREE.PlaneGeometry(7.8,3.8),tileMat);
+ t.rotation.x=-Math.PI/2;t.position.set(0,.006,z);corridor.add(t);
+}
+
+const lamps=[];
+for(let z=0;z>-185;z-=8){
+ const lamp=new THREE.Mesh(new THREE.BoxGeometry(3.3,.08,.34),new THREE.MeshBasicMaterial({color:0xf5f5ed}));
+ lamp.position.set(0,6.82,z);corridor.add(lamp);
+ const l=new THREE.PointLight(0xdceaff,2.8,13);l.position.set(0,6.1,z);corridor.add(l);lamps.push(l);
+}
+
+for(let z=-3;z>-180;z-=12){
+ for(const x of [-7.92,7.92]){
+  const s=new THREE.Mesh(new THREE.BoxGeometry(.06,2.4,.08),new THREE.MeshBasicMaterial({color:0xd8d8d1}));
+  s.position.set(x,4,z);corridor.add(s);
+ }
+}
+
+/* 4D HYPEROBJECT — real 4D vertices projected into 3D.
+   The animation rotates through several 4D planes (XY, XZ, YZ, XW, YW, ZW),
+   so the visible topology changes in ways a normal 3D rotation cannot reproduce. */
+const hyper=new THREE.Group();
+hyper.position.set(0,3.3,-38);
+scene.add(hyper);
+
+const base4D=[];
+for(let i=0;i<16;i++) base4D.push([
+  (i&1)?1:-1,(i&2)?1:-1,(i&4)?1:-1,(i&8)?1:-1
+]);
+const edges=[];
+for(let i=0;i<16;i++) for(let b=0;b<4;b++){
+  const j=i^(1<<b);
+  if(i<j) edges.push([i,j]);
+}
+
+function rotate4(v,a,b,c,d,ang){
+  const x=v[a], y=v[b];
+  v[a]=x*Math.cos(ang)-y*Math.sin(ang);
+  v[b]=x*Math.sin(ang)+y*Math.cos(ang);
+}
+function project4(v){
+  const perspective=4.2/(4.8-v[3]);
+  return new THREE.Vector3(v[0]*perspective,v[1]*perspective,v[2]*perspective);
+}
+function makeHyperGeometry(scale){
+  const positions=new Float32Array(edges.length*6);
+  const verts=new Float32Array(16*3);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute("position",new THREE.BufferAttribute(positions,3));
+  g.userData.verts=verts; g.userData.scale=scale;
+  return g;
+}
+const outerG=makeHyperGeometry(2.7);
+const innerG=makeHyperGeometry(1.35);
+const outer=new THREE.LineSegments(outerG,new THREE.LineBasicMaterial({color:0x55f6ff,transparent:true,opacity:.95}));
+const inner=new THREE.LineSegments(innerG,new THREE.LineBasicMaterial({color:0xff3cac,transparent:true,opacity:.65}));
+hyper.add(outer,inner);
+
+const pointG=new THREE.BufferGeometry();
+pointG.setAttribute("position",new THREE.Float32BufferAttribute(new Float32Array(16*3),3));
+const pointCloud=new THREE.Points(pointG,new THREE.PointsMaterial({color:0xffffff,size:.11}));
+hyper.add(pointCloud);
+
+function update4DGeometry(g,scale,phase){
+  const rotated=base4D.map(v=>v.slice());
+  const t=clock.getElapsedTime()+phase;
+
+  // Independent rotations in ordinary 3D planes...
+  rotated.forEach(v=>{
+    rotate4(v,0,1,0,1,t*.22);
+    rotate4(v,0,2,0,2,t*.17);
+    rotate4(v,1,2,1,2,t*.13);
+
+    // ...plus rotations involving W: these are the important "4D" motions.
+    rotate4(v,0,3,0,3,Math.sin(t*.43)*.72);
+    rotate4(v,1,3,1,3,t*.37);
+    rotate4(v,2,3,2,3,Math.sin(t*.29)*.58);
+
+    // A second slow W rotation makes the projection continuously morph.
+    rotate4(v,0,3,0,3,t*.09);
+  });
+
+  const projected=rotated.map(project4);
+  const pos=g.attributes.position.array;
+
+  edges.forEach((e,k)=>{
+    const A=projected[e[0]],B=projected[e[1]];
+    const q=k*6;
+    pos[q]=A.x*scale;pos[q+1]=A.y*scale;pos[q+2]=A.z*scale;
+    pos[q+3]=B.x*scale;pos[q+4]=B.y*scale;pos[q+5]=B.z*scale;
+  });
+  g.attributes.position.needsUpdate=true;
+  return projected;
+}
+
+const fragments=[];
+for(let i=0;i<28;i++){
+ const f=new THREE.Mesh(new THREE.IcosahedronGeometry(.04+Math.random()*.09,0),new THREE.MeshBasicMaterial({color:i%2?0xff3cac:0x55f6ff}));
+ f.position.set((Math.random()-.5)*10,1+Math.random()*5,-15-Math.random()*100);
+ f.userData.phase=Math.random()*10;scene.add(f);fragments.push(f);
+}
+
+// A rotating 4D "shadow" ring gives the object a dimensional afterimage.
+const ghost=new THREE.Group();
+ghost.position.set(0,3.3,-38);
+scene.add(ghost);
+for(let i=0;i<3;i++){
+  const rg=new THREE.RingGeometry(2.9+i*.55,2.92+i*.55,64);
+  const rm=new THREE.MeshBasicMaterial({
+    color:i===1?0xff3cac:0x55f6ff,
+    transparent:true,opacity:.12,side:THREE.DoubleSide
+  });
+  const ring=new THREE.Mesh(rg,rm);
+  ring.rotation.set(Math.PI/2+i*.55,i*.7,0);
+  ring.userData.phase=i*2.1;
+  ghost.add(ring);
+}
+
+const cubes=[];
+for(let i=0;i<24;i++){
+ const c=new THREE.Mesh(new THREE.BoxGeometry(.2+Math.random()*.45,.2+Math.random()*.45,.2+Math.random()*.45),new THREE.MeshBasicMaterial({color:i%2?0x55f6ff:0xa66cff,wireframe:true,transparent:true,opacity:.45}));
+ c.position.set((Math.random()-.5)*11,.5+Math.random()*6,-12-Math.random()*120);
+ c.userData.phase=Math.random()*10;scene.add(c);cubes.push(c);
+}
+
+let mx=0,my=0,scroll=0;
+addEventListener("mousemove",e=>{mx=(e.clientX/innerWidth-.5)*.35;my=(e.clientY/innerHeight-.5)*.18});
+addEventListener("scroll",()=>{
+ const max=document.documentElement.scrollHeight-innerHeight;
+ scroll=max?scrollY/max:0;
+});
+
+const nav=[...document.querySelectorAll("nav a")];
+const secs=[...document.querySelectorAll("section")];
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){nav.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+e.target.id))}}),{threshold:.5});
+secs.forEach(s=>io.observe(s));
+
+const clock=new THREE.Clock();
+function animate(){
+ requestAnimationFrame(animate);
+ const t=clock.getElapsedTime();
+
+ camera.position.z=8-scroll*62;
+ camera.position.x+=(mx-camera.position.x)*.035;
+ camera.position.y+=(1.65+my-camera.position.y)*.035;
+
+ update4DGeometry(outerG,2.7,0.0);
+ update4DGeometry(innerG,1.35,1.8);
+ const projected=update4DGeometry(pointG,2.7,.55);
+ pointG.attributes.position.array.set(projected.flatMap(v=>[v.x,v.y,v.z]));
+ pointG.attributes.position.needsUpdate=true;
+
+ // The whole 4D object drifts, while the geometry itself is independently rotating in 4D.
+ hyper.position.y=3.3+Math.sin(t*.7)*.25;
+ hyper.rotation.z=Math.sin(t*.21)*.12;
+ hyper.scale.setScalar(1+Math.sin(t*.55)*.045);
+
+ ghost.position.copy(hyper.position);
+ ghost.rotation.x=t*.18;
+ ghost.rotation.y=-t*.23;
+ ghost.rotation.z=t*.11;
+ ghost.children.forEach((r,i)=>{
+   r.rotation.x=Math.sin(t*.31+r.userData.phase)*1.1;
+   r.rotation.y=t*(.2+i*.08)+r.userData.phase;
+   r.scale.setScalar(1+Math.sin(t*.8+r.userData.phase)*.08);
+ });
+
+ fragments.forEach((f,i)=>{
+  f.rotation.x=t*(.4+i*.01);f.rotation.y=t*(.6+i*.013);
+  f.position.y+=Math.sin(t+f.userData.phase)*.0015;
+ });
+ cubes.forEach(c=>{
+  c.rotation.x=t*.35+c.userData.phase;c.rotation.y=t*.5+c.userData.phase;
+  c.position.y+=Math.sin(t+c.userData.phase)*.001;
+ });
+ lamps.forEach((l,i)=>l.intensity=2.7+Math.sin(t*11+i*2.7)*.13);
+
+ renderer.render(scene,camera);
+}
+animate();
+
+addEventListener("resize",()=>{
+ camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
