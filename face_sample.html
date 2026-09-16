@@ -14,12 +14,20 @@
   <a-assets>
     <a-asset-item id="glassesModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/glasses/scene.gltf"></a-asset-item>
     <a-asset-item id="headModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/sparkar/headOccluder.glb"></a-asset-item>
+    <a-asset-item id="HaloHead" src="https://0ElGato0.github.io/Halo.glb"></a-asset-item>
   </a-assets>
 
 
   <!-- Anchor กับตำแหน่งบนใบหน้า -->
-  <a-entity mindar-face-target="anchorIndex: 10">
-    <a-box position="0 1 -1" scale="0.5 0.5 0.5" color="red"></a-box>
+  <a-entity mindar-face-target="anchorIndex: 10">  <!-- หน้าผาก -->
+    <a-gltf-model position="0 1 -1" scale="0.5 0.5 0.5" color="red">
+    <src="#HaloHead">
+    </a-gltf-model>
+  </a-entity>
+   <a-entity mindar-face-target="anchorIndex: 168">  <!-- แว่น -->
+    <a-gltf-model position="0 0 0" scale="0.008 0.008 0.008" color="red">
+    <src="#glassesModel">
+    </a-gltf-model>
   </a-entity>
   <a-entity mindar-face-target="anchorIndex: 159">
     <a-box position="0 0 0" scale="0.01 0.01 0.01" color="red"></a-box>
